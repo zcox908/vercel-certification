@@ -23,7 +23,29 @@ function isValidCategory(s: string): s is ArticleCategory {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
-  return { title: slug };
+  const categoriesRes = await listCategories();
+  const meta = categoriesRes.success
+    ? categoriesRes.data.find((c) => c.slug === slug)
+    : null;
+  const name = meta?.name ?? slug.replace("-", " ");
+  const description = `The latest articles in ${name} from Vercel Daily News.`;
+  const url = `/category/${slug}`;
+  return {
+    title: name,
+    description,
+    openGraph: {
+      type: "website",
+      title: `${name} | Vercel Daily News`,
+      description,
+      siteName: "Vercel Daily News",
+      url,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${name} | Vercel Daily News`,
+      description,
+    },
+  };
 }
 
 async function CategoryHeader({ params }: { params: Params }) {

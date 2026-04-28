@@ -23,7 +23,7 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
       {article.image && (
         <div className={cn(
           "relative overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-900",
-          isFeature ? "aspect-[2/1]" : "aspect-[16/9]"
+          isFeature ? "aspect-2/1" : "aspect-video"
         )}>
           <Image
             src={article.image}
@@ -49,8 +49,18 @@ export default function ArticleCard({ article, variant = "default" }: Props) {
             {article.excerpt}
           </p>
         )}
-        <div className="text-xs text-zinc-500 mt-2">
-          {article.author?.name}
+        <div className="text-xs text-zinc-500 mt-2 flex items-center gap-2">
+          {article.author?.name && <span>{article.author.name}</span>}
+          {article.author?.name && article.publishedAt && <span aria-hidden>·</span>}
+          {article.publishedAt && (
+            <time dateTime={article.publishedAt}>
+              {new Date(article.publishedAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </time>
+          )}
         </div>
       </div>
     </Link>

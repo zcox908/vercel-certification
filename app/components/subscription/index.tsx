@@ -1,12 +1,10 @@
-import cn from "classnames";
 import {
   createSubscription,
   getSubscription,
   subscribe,
   unsubscribe,
 } from "@/actions/subscriptions";
-
-const buttonBase = "rounded-md px-3 py-1.5 text-xs font-medium transition-colors";
+import SubmitButton from "./submit-button";
 
 export default async function Subscription() {
   const sub = await getSubscription();
@@ -14,12 +12,12 @@ export default async function Subscription() {
   if (!sub) {
     return (
       <form action={createSubscription}>
-        <button
-          type="submit"
-          className={cn(buttonBase, "bg-black text-white dark:bg-white dark:text-black")}
+        <SubmitButton
+          pendingLabel="Subscribing…"
+          className="bg-black text-white dark:bg-white dark:text-black"
         >
           Subscribe
-        </button>
+        </SubmitButton>
       </form>
     );
   }
@@ -43,21 +41,21 @@ export default async function Subscription() {
       </span>
       {status === "inactive" ? (
         <form action={subscribe}>
-          <button
-            type="submit"
-            className={cn(buttonBase, "bg-black text-white dark:bg-white dark:text-black")}
+          <SubmitButton
+            pendingLabel="Activating…"
+            className="bg-black text-white dark:bg-white dark:text-black"
           >
             Activate
-          </button>
+          </SubmitButton>
         </form>
       ) : (
         <form action={unsubscribe}>
-          <button
-            type="submit"
-            className={cn(buttonBase, "border border-zinc-300 dark:border-zinc-700")}
+          <SubmitButton
+            pendingLabel="Unsubscribing…"
+            className="border border-zinc-300 dark:border-zinc-700"
           >
             Unsubscribe
-          </button>
+          </SubmitButton>
         </form>
       )}
     </div>

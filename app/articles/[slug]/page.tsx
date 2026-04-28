@@ -4,8 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import ContentBlocks from "@/components/article/content-blocks";
+import Paywall from "@/components/article/paywall";
 import Trending from "@/components/trending";
 import { getArticle } from "@/lib/news-api";
+import { getSubscription } from "@/actions/subscriptions";
 
 type Params = Promise<{ slug: string }>;
 
@@ -13,15 +15,34 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { slug } = await params;
   const res = await getArticle(slug);
   if (!res.success) return { title: "Article" };
+  const article = res.data;
+  const url = `/articles/${article.slug}`;
   return {
-    title: res.data.title,
-    description: res.data.excerpt,
+    title: article.title,
+    description: article.excerpt,
+    openGraph: {
+      type: "article",
+      title: article.title,
+      description: article.excerpt,
+      url,
+      siteName: "Vercel Daily News",
+      publishedTime: article.publishedAt,
+      authors: article.author?.name ? [article.author.name] : undefined,
+      tags: article.tags,
+      images: article.image ? [{ url: article.image, alt: article.title }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.title,
+      description: article.excerpt,
+      images: article.image ? [article.image] : undefined,
+    },
   };
 }
 
 async function ArticleBody({ params }: { params: Params }) {
   const { slug } = await params;
-  const res = await getArticle(slug);
+  const [res, sub] = await Promise.all([getArticle(slug), getSubscription()]);
 
   if (!res.success) {
     if (res.error.code === "NOT_FOUND") notFound();
@@ -33,6 +54,12 @@ async function ArticleBody({ params }: { params: Params }) {
   }
 
   const article = res.data;
+  const isSubscribed = sub?.success === true && sub.data.status === "active";
+
+  if (!isSubscribed) {
+    return <Paywall article={article} hasToken={sub !== null} />;
+  }
+
   const published = new Date(article.publishedAt).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",

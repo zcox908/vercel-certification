@@ -11,8 +11,7 @@ import type {
 const BASE = process.env.DAILY_NEWS_API_BASEURL;
 const BYPASS = process.env.VERCEL_PROTECTION_BYPASS;
 
-// Plain request fn — used by the subscription server actions which can't sit
-// inside a "use cache" scope (cookies + write-side).
+// Plain request fn — used by the subscription server actions that can't use "use cache" (cookies + write-side).
 export async function newsReq(path: string, init?: RequestInit) {
   if (!BASE || !BYPASS) {
     throw new Error("newsReq: Required environmental variables not set.");
@@ -78,14 +77,39 @@ export async function listArticles(q: ArticleQuery = {}) {
   return newsJson<Article[]>(`/articles${qs ? `?${qs}` : ""}`);
 }
 
-export async function getArticle(idOrSlug: string) {
+// Throwing the error inside a "use cache" so transient API errors aren't cached for hour
+async function fetchArticleCached(idOrSlug: string): Promise<Article> {
   "use cache";
   cacheTag(`article:${idOrSlug}`);
   cacheLife("hours");
-  return newsJson<Article>(`/articles/${idOrSlug}`);
+  const res = await newsJson<Article>(`/articles/${idOrSlug}`);
+  if (!res.success) throw new Error(res.error.message, { cause: res.error });
+  return res.data;
 }
 
-// trending is randomized every request — keep stale window short
+export async function getArticle(idOrSlug: string): Promise<ApiResult<Article>> {
+  try {
+    const data = await fetchArticleCached(idOrSlug);
+    return { success: true, data };
+  } catch (e) {
+    const cause = e instanceof Error ? e.cause : null;
+    if (cause && typeof cause === "object" && "code" in cause && "message" in cause) {
+      return {
+        success: false,
+        error: cause as { code: string; message: string; details?: unknown },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: "NETWORK_ERROR",
+        message: e instanceof Error ? e.message : String(e),
+      },
+    };
+  }
+}
+
+// trending is randomized every request — expect to be frequently updated
 export async function getTrending(exclude: string[] = []) {
   "use cache";
   cacheTag("trending");

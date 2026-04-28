@@ -1,8 +1,28 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import BreakingNewsBanner from "@/components/breaking-news";
 import Trending from "@/components/trending";
 import ArticleCard from "@/components/article/article-card";
 import { listArticles } from "@/lib/news-api";
+
+const homeDescription =
+  "Featured stories, the latest articles, and trending news for modern web developers.";
+
+export const metadata: Metadata = {
+  description: homeDescription,
+  openGraph: {
+    type: "website",
+    title: "Vercel Daily News",
+    description: homeDescription,
+    siteName: "Vercel Daily News",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vercel Daily News",
+    description: homeDescription,
+  },
+};
 
 async function FeaturedArticles() {
   const featuredRes = await listArticles({ featured: true, limit: 3 });
