@@ -48,6 +48,7 @@ export default function ContentBlocks({ blocks }: Props) {
               </ol>
             );
           case "image":
+            if (!block.src) return null;
             return (
               <figure key={i} className="my-2">
                 <Image
